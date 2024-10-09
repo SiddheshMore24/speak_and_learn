@@ -7,13 +7,15 @@ class NewConversationScreen extends StatefulWidget {
   _NewConversationScreenState createState() => _NewConversationScreenState();
 }
 
-class _NewConversationScreenState extends State<NewConversationScreen> {
+class _NewConversationScreenState extends State<NewConversationScreen> with SingleTickerProviderStateMixin {
   late stt.SpeechToText _speech;
   bool isListening = false;
   String _text = "";
   final _controller = TextEditingController();
+  late AnimationController _animationController;
+
   final List<Map<String, String>> responses = [
-    {"bot": "Hello", "human": "Good afternoon Siddhesh More"},
+    {"bot": "Hello", "human": "Good afternoon"},
     {"bot": "Welcome to the restaurant", "human": "Thank you"},
     {"bot": "What would you like?", "human": "I would like a tea"},
     {"bot": "Would you like some food?", "human": "A fish please"},
@@ -30,6 +32,17 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
     super.initState();
     _speech = stt.SpeechToText();
     _currentChat.add({"bot": responses[0]["bot"]!});
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _startListening() async {
@@ -39,11 +52,14 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
         _text = "";
         isListening = true;
       });
-      _speech.listen(onResult: (val) {
-        setState(() {
-          _text = val.recognizedWords;
-        });
-      });
+      _animationController.repeat(reverse: true);
+      _speech.listen(
+        onResult: (val) {
+          setState(() {
+            _text = val.recognizedWords;
+          });
+        },
+      );
 
       _timer = Timer(Duration(seconds: 6), () {
         _stopListening();
@@ -52,6 +68,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
   }
 
   void _stopListening() {
+    _animationController.stop();
     setState(() {
       isListening = false;
     });
@@ -63,6 +80,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
       _text = "";
     }
   }
+
   void _sendMessage(String message) {
     setState(() {
       String expectedResponse = responses[c]["human"]!.toLowerCase();
@@ -70,19 +88,18 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
       _currentChat.add({"human": message});
 
       if (message.trim().toLowerCase() == expectedResponse) {
-        // Correct
         c++;
         _wrongAttempts = 0;
         if (c < responses.length) {
           _currentChat.add({"bot": responses[c]["bot"]!});
         } else {
-          _currentChat.add({"bot": "Thank you for the conversation!"});
+          _showCompletionDialog();
         }
       } else {
-        // Incorrect
         if (_wrongAttempts == 0) {
-
-          _currentChat.add({"bot": "Sorry, that's not correct. The correct response is: ${responses[c]["human"]!}. Please try again."});
+          _currentChat.add({
+            "bot": "Sorry, that's not correct. The correct response is: ${responses[c]["human"]!}. Please try again."
+          });
           _wrongAttempts++;
         } else {
           _currentChat.add({"bot": "You need more practice. Moving to the next question."});
@@ -92,12 +109,29 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
           if (c < responses.length) {
             _currentChat.add({"bot": responses[c]["bot"]!});
           } else {
-            _currentChat.add({"bot": "Thank you for the conversation!"});
+            _showCompletionDialog();
           }
         }
       }
       _controller.clear();
     });
+  }
+
+  void _showCompletionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('Congratulations! 🎉'),
+        content: Text('You have completed the conversation practice!'),
+        actions: [
+          TextButton(
+            child: Text('Return to Home'),
+            onPressed: _endConversation,
+          ),
+        ],
+      ),
+    );
   }
 
   void _endConversation() {
@@ -110,25 +144,55 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
     final text = isBot ? message['bot']! : message['human']!;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
       child: Row(
         mainAxisAlignment: isBot ? MainAxisAlignment.start : MainAxisAlignment.end,
         children: [
-          Container(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-            decoration: BoxDecoration(
-              color: isBot ? Colors.grey[200] : Colors.blue[100],
-              borderRadius: BorderRadius.circular(12),
+          if (isBot)
+            CircleAvatar(
+              backgroundColor: Colors.blue[100],
+              child: Icon(Icons.android, color: Colors.blue[900]),
+              radius: 16,
             ),
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 16,
+          SizedBox(width: isBot ? 8 : 0),
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.7,
+              ),
+              decoration: BoxDecoration(
+                color: isBot ? Colors.blue[50] : Colors.green[100],
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(isBot ? 0 : 20),
+                  topRight: Radius.circular(isBot ? 20 : 0),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 3,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
+          SizedBox(width: !isBot ? 8 : 0),
+          if (!isBot)
+            CircleAvatar(
+              backgroundColor: Colors.green[100],
+              child: Icon(Icons.person, color: Colors.green[900]),
+              radius: 16,
+            ),
         ],
       ),
     );
@@ -138,7 +202,12 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("New Conversation"),
+        elevation: 2,
+        title: Text(
+          "English Conversation Practice",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.blue,
         actions: [
           IconButton(
             icon: Icon(Icons.done),
@@ -147,72 +216,129 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
           )
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              "Hold the mic button to record your voice. It will record for 5 seconds.",
-              style: TextStyle(color: Colors.black54),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _currentChat.length,
-              itemBuilder: (context, index) {
-                return _buildMessage(_currentChat[index]);
-              },
-            ),
-          ),
-          if (isListening)
+      body: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+        ),
+        child: Column(
+          children: [
             Container(
-              color: Colors.grey[200],
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              padding: const EdgeInsets.all(12.0),
+              color: Colors.blue[50],
+              child: Row(
                 children: [
-                  Icon(Icons.mic, color: Colors.red, size: 48),
-                  SizedBox(height: 8),
-                  Text(
-                    "Please speak...",
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                  Icon(Icons.info_outline, color: Colors.blue[900]),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Hold the microphone button to record your voice. Recording stops after 5 seconds.",
+                      style: TextStyle(color: Colors.blue[900], fontSize: 14),
                     ),
                   ),
                 ],
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                hintText: "Type your message",
-                suffixIcon: GestureDetector(
-                  onTapDown: (_) => _startListening(),
-                  onTapUp: (_) => _stopListening(),
-                  // onTapCancel: () => _stopListening(),
-                  // onLongPress: ()=>_startListening,
-                  // onLongPressCancel: ()=>_stopListening,
-                  // Stop listening if the gesture is canceled
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Icon(
-                      isListening ? Icons.mic : Icons.mic_none,
-                      color: isListening ? Colors.red : Colors.blue,
-                      size: 30,
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.only(top: 12, bottom: 12),
+                itemCount: _currentChat.length,
+                itemBuilder: (context, index) {
+                  return _buildMessage(_currentChat[index]);
+                },
+              ),
+            ),
+            if (isListening)
+              AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) {
+                  return Container(
+                    color: Colors.blue[50],
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Transform.scale(
+                          scale: 1.0 + (_animationController.value * 0.2),
+                          child: Icon(Icons.mic, color: Colors.red, size: 48),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          _text.isEmpty ? "Listening..." : _text,
+                          style: TextStyle(
+                            color: Colors.blue[900],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: InputDecoration(
+                        hintText: "Type your message",
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                      ),
+                      onSubmitted: (value) {
+                        if (value.isNotEmpty) _sendMessage(value);
+                      },
                     ),
                   ),
-                ),
+                  SizedBox(width: 8),
+                  GestureDetector(
+                    onTapDown: (_) => _startListening(),
+                    onTapUp: (_) => _stopListening(),
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isListening ? Colors.red : Colors.blue,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isListening ? Colors.red : Colors.blue).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        isListening ? Icons.mic : Icons.mic_none,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              onSubmitted: (value) {
-                _sendMessage(value);
-              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

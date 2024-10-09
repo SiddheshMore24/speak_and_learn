@@ -38,7 +38,7 @@ class _HomePageState extends State<HomePage> {
       title: Text('Chat ${chat['id']}'),
       subtitle: Text(chat['last_message'] ?? 'No messages'),
       onTap: () {
-     Navigator.push(context, MaterialPageRoute(builder: (ctx)=>NewConversationScreen()));
+
       },
     );
   }
@@ -56,7 +56,9 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: (){},
+        onPressed: (){
+          Navigator.push(context, MaterialPageRoute(builder: (ctx)=>NewConversationScreen()));
+        },
         tooltip: 'Start New Conversation',
         child: Icon(Icons.add),
       ),
