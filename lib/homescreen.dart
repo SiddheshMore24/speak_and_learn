@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:speak_it/new_conversation_screen.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -37,7 +38,7 @@ class _HomePageState extends State<HomePage> {
       title: Text('Chat ${chat['id']}'),
       subtitle: Text(chat['last_message'] ?? 'No messages'),
       onTap: () {
-
+     Navigator.push(context, MaterialPageRoute(builder: (ctx)=>NewConversationScreen()));
       },
     );
   }

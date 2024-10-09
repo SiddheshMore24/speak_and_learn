@@ -3,20 +3,16 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'dart:async';
 
 class NewConversationScreen extends StatefulWidget {
-  final Function on_ending_conversation;
-
-  NewConversationScreen({required this.on_ending_conversation});
-
   @override
   _NewConversationScreenState createState() => _NewConversationScreenState();
 }
 
 class _NewConversationScreenState extends State<NewConversationScreen> {
   late stt.SpeechToText _speech;
-  bool _isListening = false;
+  bool isListening = false;
   String _text = "";
   final _controller = TextEditingController();
-  final List<Map<String, String>> _predefinedResponses = [
+  final List<Map<String, String>> responses = [
     {"bot": "Hello", "human": "Good afternoon"},
     {"bot": "Welcome to the restaurant", "human": "Thank you"},
     {"bot": "What would you like?", "human": "I would like a tea"},
@@ -24,7 +20,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
     {"bot": "Anything else?", "human": "Yes, with grilled vegetables"},
     {"bot": "Would you like some water?", "human": "Yes, please"}
   ];
-  int _step = 0;
+  int c = 0;
   int _wrongAttempts = 0;
   List<Map<String, String>> _currentChat = [];
   Timer? _timer;
@@ -33,14 +29,14 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
-    _currentChat.add({"bot": _predefinedResponses[0]["bot"]!});
+    _currentChat.add({"bot": responses[0]["bot"]!});
   }
 
   void _startListening() async {
     bool available = await _speech.initialize();
     if (available) {
       setState(() {
-        _isListening = true;
+        isListening = true;
         _text = ""; // Reset the text
       });
       _speech.listen(onResult: (val) {
@@ -49,7 +45,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
         });
       });
 
-      _timer = Timer(Duration(seconds: 5), () {
+      _timer = Timer(Duration(seconds: ), () {
         _stopListening();
       });
     }
@@ -57,48 +53,45 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
 
   void _stopListening() {
     setState(() {
-      _isListening = false;
+      isListening = false;
     });
     _speech.stop();
     _timer?.cancel();
-
     if (_text.isNotEmpty) {
       _sendMessage(_text);
     }
   }
-
   void _sendMessage(String message) {
     setState(() {
-      String expectedResponse = _predefinedResponses[_step]["human"]!.toLowerCase();
+      String expectedResponse = responses[c]["human"]!.toLowerCase();
+
 
       _currentChat.add({"human": message});
 
       if (message.trim().toLowerCase() == expectedResponse) {
-        _step++;
+        // Correct response
+        c++;
         _wrongAttempts = 0;
-
-        if (_step < _predefinedResponses.length) {
-          _currentChat.add({"bot": _predefinedResponses[_step]["bot"]!});
+        if (c < responses.length) {
+          _currentChat.add({"bot": responses[c]["bot"]!});
         } else {
           _currentChat.add({"bot": "Thank you for the conversation!"});
         }
       } else {
+        // Incorrect response
         if (_wrongAttempts == 0) {
-          _currentChat.add({"bot": "Sorry, I didn't understand."});
+          // First incorrect attempt
+          _currentChat.add({"bot": "Sorry, that's not correct. The correct response is: ${responses[c]["human"]!}. Please try again."});
           _wrongAttempts++;
         } else {
-          _currentChat.add({"bot": "Correct response is: ${_predefinedResponses[_step]["human"]!}"});
-          _wrongAttempts++;
+          _currentChat.add({"bot": "You need more practice. Moving to the next question."});
+          c++;
+          _wrongAttempts = 0;
 
-          if (_wrongAttempts >= 2) {
-            _step++;
-            _wrongAttempts = 0;
-
-            if (_step < _predefinedResponses.length) {
-              _currentChat.add({"bot": _predefinedResponses[_step]["bot"]!});
-            } else {
-              _currentChat.add({"bot": "Thank you for the conversation!"});
-            }
+          if (c < responses.length) {
+            _currentChat.add({"bot": responses[c]["bot"]!});
+          } else {
+            _currentChat.add({"bot": "Thank you for the conversation!"});
           }
         }
       }
@@ -107,8 +100,8 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
   }
 
   void _endConversation() {
-    widget.on_ending_conversation();
-    Navigator.pop(context);
+    Navigator.pop(context); // Pop the current screen
+    Navigator.pushReplacementNamed(context, '/home'); // Replace with the home screen
   }
 
   Widget _buildMessage(Map<String, String> message) {
@@ -170,20 +163,21 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
               },
             ),
           ),
-          if (_isListening)
+          if (isListening)
             Container(
               color: Colors.grey[200],
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Row(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.mic, color: Colors.red),
-                  SizedBox(width: 8),
+                  Icon(Icons.mic, color: Colors.red, size: 48),
+                  SizedBox(height: 8),
                   Text(
-                    "Listening...",
+                    "Please speak...",
                     style: TextStyle(
                       color: Colors.red,
                       fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
                 ],
@@ -196,14 +190,14 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
               decoration: InputDecoration(
                 hintText: "Type your message",
                 suffixIcon: GestureDetector(
-                  onTapDown: (_) => _startListening(),
-                  onTapUp: (_) => _stopListening(),
-                  onTapCancel: () => _stopListening(),
+                  onTapDown: (_) => _startListening(), // Start listening when pressed
+                  onTapUp: (_) => _stopListening(), // Stop listening when released
+                  onTapCancel: () => _stopListening(), // Stop listening if the gesture is canceled
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      color: _isListening ? Colors.red : Colors.blue,
+                      isListening ? Icons.mic : Icons.mic_none,
+                      color: isListening ? Colors.red : Colors.blue,
                       size: 30,
                     ),
                   ),
