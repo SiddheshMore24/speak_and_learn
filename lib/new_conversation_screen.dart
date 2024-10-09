@@ -13,7 +13,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
   String _text = "";
   final _controller = TextEditingController();
   final List<Map<String, String>> responses = [
-    {"bot": "Hello", "human": "Good afternoon"},
+    {"bot": "Hello", "human": "Good afternoon Siddhesh More"},
     {"bot": "Welcome to the restaurant", "human": "Thank you"},
     {"bot": "What would you like?", "human": "I would like a tea"},
     {"bot": "Would you like some food?", "human": "A fish please"},
@@ -36,8 +36,8 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
     bool available = await _speech.initialize();
     if (available) {
       setState(() {
+        _text = "";
         isListening = true;
-        _text = ""; // Reset the text
       });
       _speech.listen(onResult: (val) {
         setState(() {
@@ -45,7 +45,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
         });
       });
 
-      _timer = Timer(Duration(seconds: ), () {
+      _timer = Timer(Duration(seconds: 6), () {
         _stopListening();
       });
     }
@@ -57,19 +57,20 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
     });
     _speech.stop();
     _timer?.cancel();
+
     if (_text.isNotEmpty) {
       _sendMessage(_text);
+      _text = "";
     }
   }
   void _sendMessage(String message) {
     setState(() {
       String expectedResponse = responses[c]["human"]!.toLowerCase();
 
-
       _currentChat.add({"human": message});
 
       if (message.trim().toLowerCase() == expectedResponse) {
-        // Correct response
+        // Correct
         c++;
         _wrongAttempts = 0;
         if (c < responses.length) {
@@ -78,9 +79,9 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
           _currentChat.add({"bot": "Thank you for the conversation!"});
         }
       } else {
-        // Incorrect response
+        // Incorrect
         if (_wrongAttempts == 0) {
-          // First incorrect attempt
+
           _currentChat.add({"bot": "Sorry, that's not correct. The correct response is: ${responses[c]["human"]!}. Please try again."});
           _wrongAttempts++;
         } else {
@@ -100,8 +101,8 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
   }
 
   void _endConversation() {
-    Navigator.pop(context); // Pop the current screen
-    Navigator.pushReplacementNamed(context, '/home'); // Replace with the home screen
+    Navigator.pop(context);
+    Navigator.pushReplacementNamed(context, '/home');
   }
 
   Widget _buildMessage(Map<String, String> message) {
@@ -190,9 +191,12 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
               decoration: InputDecoration(
                 hintText: "Type your message",
                 suffixIcon: GestureDetector(
-                  onTapDown: (_) => _startListening(), // Start listening when pressed
-                  onTapUp: (_) => _stopListening(), // Stop listening when released
-                  onTapCancel: () => _stopListening(), // Stop listening if the gesture is canceled
+                  onTapDown: (_) => _startListening(),
+                  onTapUp: (_) => _stopListening(),
+                  // onTapCancel: () => _stopListening(),
+                  // onLongPress: ()=>_startListening,
+                  // onLongPressCancel: ()=>_stopListening,
+                  // Stop listening if the gesture is canceled
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Icon(
