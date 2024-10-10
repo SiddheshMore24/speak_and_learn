@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class NewConversationScreen extends StatefulWidget {
   @override
@@ -134,7 +136,15 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
     );
   }
 
-  void _endConversation() {
+  // Save chat history to SharedPreferences when ending the conversation
+  Future<void> _saveChatHistory() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String chatHistory = json.encode(_currentChat);
+    await prefs.setString('chatHistory', chatHistory);
+  }
+
+  void _endConversation() async {
+    await _saveChatHistory(); // Save the chat history at the end of the conversation
     Navigator.pop(context);
     Navigator.pushReplacementNamed(context, '/home');
   }
@@ -267,7 +277,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
                           style: TextStyle(
                             color: Colors.blue[900],
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 18,
                           ),
                         ),
                       ],
@@ -275,64 +285,37 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
                   );
                 },
               ),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
+            Padding(
               padding: const EdgeInsets.all(12.0),
               child: Row(
                 children: [
+                  IconButton(
+                    icon: Icon(
+                      isListening ? Icons.mic_off : Icons.mic,
+                      size: 36,
+                      color: isListening ? Colors.red : Colors.blue[900],
+                    ),
+                    onPressed: isListening ? _stopListening : _startListening,
+                  ),
+                  SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        hintText: "Type your message",
+                        hintText: "Type your message...",
                         filled: true,
-                        fillColor: Colors.grey[100],
+                        fillColor: Colors.white,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(20),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
                       ),
-                      onSubmitted: (value) {
-                        if (value.isNotEmpty) _sendMessage(value);
-                      },
+                      onSubmitted: _sendMessage,
                     ),
                   ),
-                  SizedBox(width: 8),
-                  GestureDetector(
-                    onTapDown: (_) => _startListening(),
-                    onTapUp: (_) => _stopListening(),
-                    child: Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isListening ? Colors.red : Colors.blue,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isListening ? Colors.red : Colors.blue).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        isListening ? Icons.mic : Icons.mic_none,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
+                  IconButton(
+                    icon: Icon(Icons.send, color: Colors.blue[900]),
+                    onPressed: () => _sendMessage(_controller.text),
                   ),
                 ],
               ),

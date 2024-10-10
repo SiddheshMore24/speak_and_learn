@@ -50,6 +50,7 @@ class _HomePageState extends State<HomePage> {
     },
   ];
 
+  // Function to start a new conversation
   void _startNewConversation() async {
     await Navigator.push(
       context,
@@ -57,8 +58,21 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => NewConversationScreen(),
       ),
     );
+
+    // Add a new chat dynamically after returning from the new conversation screen
+    setState(() {
+      _chatHistory.add({
+        'id': _chatHistory.length + 1,
+        'title': 'New Chat ${_chatHistory.length + 1}',
+        'last_message': 'New conversation started...',
+        'date': DateTime.now().toString().substring(0, 10),
+        'completion': 70, // Default completion
+        'total_messages': 1,
+      });
+    });
   }
 
+  // Building the conversation tile
   Widget _buildConversationTile(Map<String, dynamic> chat) {
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -112,7 +126,6 @@ class _HomePageState extends State<HomePage> {
                 valueColor: AlwaysStoppedAnimation<Color>(
                   chat['completion'] == 100 ? Colors.green : Colors.blue,
                 ),
-                borderRadius: BorderRadius.circular(2),
               ),
               SizedBox(height: 12),
               Row(
@@ -185,20 +198,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         backgroundColor: Colors.blue,
-        actions: [
-          // IconButton(
-          //   icon: Icon(Icons.search),
-          //   onPressed: () {
-          //     // Implement search functionality
-          //   },
-          // ),
-          // IconButton(
-          //   icon: Icon(Icons.more_vert),
-          //   onPressed: () {
-          //     // Implement menu options
-          //   },
-          // ),
-        ],
       ),
       body: Column(
         children: [
