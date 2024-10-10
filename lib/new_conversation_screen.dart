@@ -3,6 +3,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class NewConversationScreen extends StatefulWidget {
   @override
@@ -15,35 +16,61 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
   String _text = "";
   final _controller = TextEditingController();
   late AnimationController _animationController;
+  List<Map<String, String>> responses = [];
+  bool isLoading = true;
 
-  final List<Map<String, String>> responses = [
-    {"bot": "Hello", "human": "Good afternoon"},
-    {"bot": "Welcome to the restaurant", "human": "Thank you"},
-    {"bot": "What would you like?", "human": "I would like a tea"},
-    {"bot": "Would you like some food?", "human": "A fish please"},
-    {"bot": "Anything else?", "human": "Yes, with grilled vegetables"},
-    {"bot": "Would you like some water?", "human": "Yes, please"}
-  ];
   int c = 0;
   int _wrongAttempts = 0;
   List<Map<String, String>> _currentChat = [];
   Timer? _timer;
 
+  Future<void> _fetchData() async {
+    try {
+      final response = await http.get(Uri.parse('https://my-json-server.typicode.com/tryninjastudy/dummyapi/db'));
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = json.decode(response.body);
+        List<dynamic> restaurantData = data['restaurant'];
+
+        setState(() {
+          responses = List<Map<String, String>>.from(
+              restaurantData.map((item) => Map<String, String>.from(item))
+          );
+          isLoading = false;
+          // Initialize first message only after data is loaded
+          if (responses.isNotEmpty) {
+            _currentChat.add({"bot": responses[0]["bot"]!});
+          }
+        });
+      } else {
+        throw Exception("Failed to load data from API");
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load conversation data. Please try again later.'))
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
-    _currentChat.add({"bot": responses[0]["bot"]!});
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
+    _fetchData();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _timer?.cancel();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -84,6 +111,8 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
   }
 
   void _sendMessage(String message) {
+    if (responses.isEmpty) return;
+
     setState(() {
       String expectedResponse = responses[c]["human"]!.toLowerCase();
 
@@ -136,15 +165,16 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
     );
   }
 
-  // Save chat history to SharedPreferences when ending the conversation
   Future<void> _saveChatHistory() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? savedChats = prefs.getStringList('savedChats') ?? [];
     String chatHistory = json.encode(_currentChat);
-    await prefs.setString('chatHistory', chatHistory);
+    savedChats.add(chatHistory);
+    await prefs.setStringList('savedChats', savedChats);
   }
 
   void _endConversation() async {
-    await _saveChatHistory(); // Save the chat history at the end of the conversation
+    await _saveChatHistory();
     Navigator.pop(context);
     Navigator.pushReplacementNamed(context, '/home');
   }
@@ -182,14 +212,14 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 3,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Text(
                 text,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black87,
                   fontSize: 16,
                 ),
@@ -226,7 +256,9 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
           )
         ],
       ),
-      body: Container(
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Container(
         decoration: BoxDecoration(
           color: Colors.grey[100],
         ),
@@ -241,7 +273,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "Click the microphone button to record your voice. Recording stops after 6 seconds. automatically.",
+                      "Press the microphone button to record your voice. Recording stops after 5 seconds.",
                       style: TextStyle(color: Colors.blue[900], fontSize: 14),
                     ),
                   ),
@@ -263,15 +295,15 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
                 builder: (context, child) {
                   return Container(
                     color: Colors.blue[50],
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Transform.scale(
                           scale: 1.0 + (_animationController.value * 0.2),
-                          child: Icon(Icons.mic, color: Colors.red, size: 48),
+                          child: const Icon(Icons.mic, color: Colors.red, size: 48),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           _text.isEmpty ? "Listening..." : _text,
                           style: TextStyle(

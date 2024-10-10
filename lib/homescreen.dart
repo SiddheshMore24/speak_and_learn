@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:speak_it/dummyHistory.dart';
 import 'new_conversation_screen.dart';
 
 class HomePage extends StatefulWidget {
@@ -7,10 +8,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+
+
+
   List<Map<String, dynamic>> _chatHistory = [
     {
       'id': 1,
-      'title': 'Restaurant Conversation',
+      'title': 'Restaurant Conversation(Dummy data)',
       'last_message': 'Would you like some water?',
       'date': '2024-10-09',
       'completion': 85,
@@ -18,39 +22,15 @@ class _HomePageState extends State<HomePage> {
     },
     {
       'id': 2,
-      'title': 'Shopping Dialog',
+      'title': 'Shopping Dialog(Dummy data)',
       'last_message': 'How much does this cost?',
       'date': '2024-10-08',
       'completion': 100,
       'total_messages': 8,
     },
-    {
-      'id': 3,
-      'title': 'Airport Check-in',
-      'last_message': 'Here is my passport',
-      'date': '2024-10-07',
-      'completion': 60,
-      'total_messages': 15,
-    },
-    {
-      'id': 4,
-      'title': 'Hotel Booking',
-      'last_message': 'I have a reservation',
-      'date': '2024-10-06',
-      'completion': 40,
-      'total_messages': 10,
-    },
-    {
-      'id': 5,
-      'title': 'Doctor Appointment',
-      'last_message': 'I have a headache',
-      'date': '2024-10-05',
-      'completion': 90,
-      'total_messages': 14,
-    },
+
   ];
 
-  // Function to start a new conversation
   void _startNewConversation() async {
     await Navigator.push(
       context,
@@ -59,20 +39,19 @@ class _HomePageState extends State<HomePage> {
       ),
     );
 
-    // Add a new chat dynamically after returning from the new conversation screen
+
     setState(() {
       _chatHistory.add({
         'id': _chatHistory.length + 1,
         'title': 'New Chat ${_chatHistory.length + 1}',
         'last_message': 'New conversation started...',
         'date': DateTime.now().toString().substring(0, 10),
-        'completion': 70, // Default completion
+        'completion': 70,
         'total_messages': 1,
       });
     });
   }
 
-  // Building the conversation tile
   Widget _buildConversationTile(Map<String, dynamic> chat) {
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -83,7 +62,7 @@ class _HomePageState extends State<HomePage> {
       child: InkWell(
         borderRadius: BorderRadius.circular(15),
         onTap: () {
-          // Handle chat tap
+         Navigator.push(context,MaterialPageRoute(builder: (ctx)=>ChatPage()));
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -237,7 +216,7 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               Column(
                                 children: [
-                                  Text(
+                                  const Text(
                                     '5',
                                     style: TextStyle(
                                       fontSize: 24,
@@ -296,7 +275,6 @@ class _HomePageState extends State<HomePage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    // View all conversations
                   },
                   child: Text('View All'),
                 ),
