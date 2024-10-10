@@ -241,7 +241,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "Hold the microphone button to record your voice. Recording stops after 5 seconds.",
+                      "Click the microphone button to record your voice. Recording stops after 6 seconds. automatically.",
                       style: TextStyle(color: Colors.blue[900], fontSize: 14),
                     ),
                   ),
