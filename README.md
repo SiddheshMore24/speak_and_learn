@@ -109,7 +109,7 @@ dependencies:
 
 ## Contact
 
-For any queries, please reach out to: your.email@example.com
+For any queries, please reach out to: siddheshmore0024@gmail.com
 
 ---
 Built with Flutter 💙
