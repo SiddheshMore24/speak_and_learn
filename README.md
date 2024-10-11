@@ -1,4 +1,4 @@
-# English Conversation Practice App
+# Speak & Learn
 
 A Flutter application that helps users practice English conversations through speech recognition. Users can engage in predefined conversation scenarios with a bot, speaking their responses or typing them.
 
@@ -28,12 +28,12 @@ A Flutter application that helps users practice English conversations through sp
 
 2. Clone the repository:
 ```
-git clone https://github.com/yourusername/english-conversation-app.git
+git clone https://github.com/SiddheshMore24/speak_and_learn.git
 ```
 
 3. Navigate to project directory and get dependencies:
 ```
-cd english-conversation-app
+cd speak_and_learn
 flutter pub get
 ```
 
@@ -42,8 +42,8 @@ flutter pub get
 dependencies:
   flutter:
     sdk: flutter
-  speech_to_text: ^6.1.1
-  http: ^0.13.5
+  speech_to_text: ^7.0.0
+  http: ^1.2.2
 ```
 
 5. Add these permissions to `android/app/src/main/AndroidManifest.xml`:
