@@ -175,8 +175,10 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
 
   void _endConversation() async {
     await _saveChatHistory();
+
     Navigator.pop(context);
-    Navigator.pushReplacementNamed(context, '/home');
+    Navigator.pop(context);
+    // Navigator.pushReplacementNamed(context, '/home');
   }
 
   Widget _buildMessage(Map<String, String> message) {
