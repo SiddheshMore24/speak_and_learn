@@ -43,14 +43,14 @@ class _NewConversationScreenState extends State<NewConversationScreen> with Sing
           }
         });
       } else {
-        throw Exception("Failed to load data from API");
+        throw Exception("Failed to load data from API, Please check Your internet connectivity");
       }
     } catch (e) {
       setState(() {
         isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load conversation data. Please try again later.'))
+          SnackBar(content: Text('Failed to load conversation data. Please check your internet connectivity'))
       );
     }
   }
